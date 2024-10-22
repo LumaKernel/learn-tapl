@@ -1,4 +1,5 @@
 #![feature(box_patterns)]
+#![allow(dead_code)]
 
 enum Term {
     Zero,
@@ -23,18 +24,22 @@ enum Type {
 fn typing(t: &Term) -> Option<Type> {
     match t {
         // T-Zero
+        // ===========
+        // 0: Nat
         Term::Zero => Some(Type::Nat),
+
         // T-Succ
-        // t: Nat
+        // t: Bool
         // ===========
         // succ t: Nat
         Term::Succ(t) => {
-            if let Some(Type::Nat) = typing(t) {
+            if let Some(Type::Bool) = typing(t) {
                 Some(Type::Nat)
             } else {
                 None
             }
         }
+
         // T-Pred
         Term::Pred(t) => {
             if let Some(Type::Nat) = typing(t) {
