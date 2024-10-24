@@ -109,32 +109,35 @@ def parse(src: str) -> Term:
     p = Parser(src)
     return p.parse_term()
 
-v = parse('((\\x. x x) (\\x. x x))')
+v = parse('((\\x. (x x)) (\\x. (x x)))')
 print(v)
 
 
-# (λx. t1)[y := t2] := λx. t1[y := t2] (if x != y)
-# (t1 t2)[y := t] := (t1[y := t] t2[y := t])
 def subst(term: Term, var: str, val: Term) -> Term:
-    if isinstance(term, TermVar):
-        # x[y := t] := t (if x = y)
-        if var == term.name:
-            return val
-        # x[y := t] := x (if x != y)
-        else:
-            return term
-    elif isinstance(term, TermAbs):
-        # (λx. t1)[y := t2] := λx. t1 (if x = y)
-        pass
-    elif isinstance(term, TermApp):
-        pass
-    else:
-        assert_never(term)
-
+    match term:
+        case TermVar(name):
+            if name == var:
+                # x[y := t] = t (x == y)
+                return val
+            else:
+                # x[y := t] = x (x != y)
+                return term
+        case TermAbs(bind, body):
+            if bind == var:
+                # (λx. t)[y := t] = λx. t (x == y)
+                return term
+            else:
+                # (λx. t)[y := t] = λx. t[y := t] (x != y)
+                return TermAbs(bind, subst(body, var, val))
+        case TermApp(callee, arg):
+            # (t1 t2)[y := t] = (t1[y := t] t2[y := t])
+            return TermApp(subst(callee, var, val), subst(arg, var, val))
+        case _:
+            assert_never(term)
 
 # (\x. y)
 ex1 = TermAbs('x', TermVar('y'))
-# print(subst(ex1, 'y', TermVar('z'))) # (\x. z)
+print(subst(ex1, 'y', TermVar('z'))) # (\x. z)
 
 
 def assert_never(x: NoReturn) -> NoReturn:
